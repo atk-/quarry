@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quarry Workbench</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<!-- ── Top bar ──────────────────────────────────────────────────── -->
+<div id="topbar">
+  <h1>Quarry</h1>
+  <span id="status-dot" class="status-dot" title="WebSocket connection"></span>
+  <span id="counter" style="color:#555">0 events</span>
+
+  <div id="filter-bar">
+    <input id="filter-text"  type="text"    placeholder="search…">
+    <select id="filter-type">
+      <option value="">all types</option>
+      <option value="process">process</option>
+      <option value="file">file</option>
+      <option value="registry">registry</option>
+      <option value="network">network</option>
+      <option value="hook">hook</option>
+      <option value="eventlog">eventlog</option>
+    </select>
+    <input id="filter-pid" type="number" placeholder="PID" style="width:70px">
+  </div>
+</div>
+
+<!-- ── Main layout ──────────────────────────────────────────────── -->
+<div id="layout">
+
+  <!-- ── Timeline view (default) ──────────────────────────────── -->
+  <div id="view-timeline" class="view active">
+
+    <div id="panel-tree">
+      <h2>Process Tree</h2>
+      <div id="tree-list"></div>
+    </div>
+
+    <div id="panel-events">
+      <h2>Timeline</h2>
+      <div id="event-list"></div>
+    </div>
+
+    <div id="panel-detail">
+      <h2>Detail</h2>
+      <div id="detail-content" style="color:#555;padding:12px">
+        Click an event to inspect it.
+      </div>
+    </div>
+
+  </div><!-- /view-timeline -->
+
+  <!-- ── Static analysis view ─────────────────────────────────── -->
+  <div id="view-static" class="view">
+    <div id="static-panel">
+      <div id="static-content">
+        <p style="color:#555;padding:16px">
+          No static analysis data. Run <code>quarry start --sample &lt;binary&gt;</code>
+          to analyse a PE before execution.
+        </p>
+      </div>
+    </div>
+  </div><!-- /view-static -->
+
+</div><!-- /layout -->
+
+<!-- ── Bottom tabs ───────────────────────────────────────────────── -->
+<div id="bottom">
+  <span class="tab active"  data-view="timeline" onclick="showTab(this)">Timeline</span>
+  <span class="tab"         data-view="static"   onclick="showTab(this)">Static</span>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
