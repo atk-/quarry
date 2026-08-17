@@ -12,6 +12,7 @@ EVENT_HOOK     = "hook"
 EVENT_EVENTLOG = "eventlog"
 EVENT_YARA     = "yara"
 EVENT_POWERSHELL = "powershell"
+EVENT_WMI        = "wmi"
 
 
 @dataclass

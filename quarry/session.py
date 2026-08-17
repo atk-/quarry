@@ -29,6 +29,7 @@ from quarry.collectors.registry_collector import RegistryCollector, PROVIDER as 
 from quarry.collectors.network_collector  import NetworkCollector, PROVIDER_NET, PROVIDER_DNS
 from quarry.collectors.eventlog_collector import EventLogCollector
 from quarry.collectors.powershell_collector import PowerShellCollector, PROVIDER as PS_PROVIDER
+from quarry.collectors.wmi_collector       import WMIActivityCollector, PROVIDER as WMI_PROVIDER
 from quarry.hooks.ipc_server      import HookIPCServer
 from quarry.hooks.child_injector  import ChildInjector
 from quarry.analysis.yara_scanner import YaraScanner
@@ -68,6 +69,7 @@ class AnalysisSession:
         self._net_col  = NetworkCollector(emit=self._store.post)
         self._evtlog   = EventLogCollector(emit=self._store.post)
         self._ps_col   = PowerShellCollector(emit=self._store.post)
+        self._wmi_col  = WMIActivityCollector(emit=self._store.post)
 
         self._etw.register_router(PROC_PROVIDER, self._proc_col.handle)
         self._etw.register_router(FILE_PROVIDER, self._file_col.handle)
@@ -75,6 +77,7 @@ class AnalysisSession:
         self._etw.register_router(PROVIDER_NET,  self._net_col.handle_net)
         self._etw.register_router(PROVIDER_DNS,  self._net_col.handle_dns)
         self._etw.register_router(PS_PROVIDER,   self._ps_col.handle)
+        self._etw.register_router(WMI_PROVIDER,  self._wmi_col.handle)
 
         self._stop_event = asyncio.Event()
 

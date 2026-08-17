@@ -103,6 +103,7 @@ function summarize(ev) {
     const trunc = d.truncated ? " (truncated)" : "";
     return `${d.path || "<inline>"}: ${(d.script_text || "").slice(0, 80)}${trunc}`;
   }
+  if (ev.event_type === "wmi") return `${d.op || ""}: ${d.namespace || ""}`;
   return JSON.stringify(d).slice(0, 80);
 }
 

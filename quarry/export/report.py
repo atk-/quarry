@@ -39,6 +39,7 @@ _TEMPLATE = """\
   .eventlog{{background:#1a1a00;color:#888}}
   .yara{{background:#332200;color:#ff8800}}
   .powershell{{background:#003333;color:#00cccc}}
+  .wmi{{background:#330019;color:#ff4da6}}
   details summary{{cursor:pointer;color:#888}}
   details[open] summary{{color:#0f0}}
 </style>

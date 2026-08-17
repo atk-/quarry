@@ -53,6 +53,11 @@ See [../ARCHITECTURE.md](../ARCHITECTURE.md) for how these pieces fit together.
   (Script Block Logging) records to `Event` objects. Buffers multi-fragment script
   blocks by `ScriptBlockId` and emits once reassembled — the one stateful collector
   in this package.
+- **`wmi_collector.py`** — Maps `Microsoft-Windows-WMI-Activity` records (operation
+  start/failure, permanent/temporary event-subscription activity, filter-to-consumer
+  binding creation) to `Event` objects. Stateless like `registry_collector.py`; prefers
+  the payload's `ClientProcessId` over the generic header `ProcessId` since the header
+  PID for this provider is always the `WmiPrvSE.exe` host process.
 
 ## `quarry/hooks/`
 

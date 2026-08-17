@@ -69,6 +69,7 @@ Each domain collector is a thin mapper:
 | `NetworkCollector` | `Microsoft-Windows-Kernel-Network` + `Microsoft-Windows-DNS-Client` | TCP/UDP connect/send/recv, DNS queries |
 | `EventLogCollector` | Win32 `EvtSubscribe` | Security / System / Application channels |
 | `PowerShellCollector` | `Microsoft-Windows-PowerShell` | Reassembled PowerShell Script Block Logging (EID 4104) text |
+| `WMIActivityCollector` | `Microsoft-Windows-WMI-Activity` | WMI operation start/failure, permanent/temporary event-subscription activity, `__FilterToConsumerBinding` creation (persistence) |
 
 Collectors implement the `Collector` ABC (`base.py`): `start()`, `stop()`, and a `handle(record)` method that the ETW session calls. With one deliberate exception, they are stateless — they map raw ETW record dicts to `Event` objects and emit them; no buffering or state lives inside a collector. The exception is `PowerShellCollector`: EID 4104 (Script Block Logging) splits large/obfuscated script text across multiple ETW events sharing a `ScriptBlockId`, so the collector buffers fragments per block until all arrive, then emits one reassembled `Event`. This buffer is bounded (oldest-entry eviction past a fixed count of concurrently-tracked incomplete blocks) so a script block that never completes can't grow memory without limit.
 

@@ -12,6 +12,7 @@
   --red:     #ff4444;
   --orange:  #ff8800;
   --cyan:    #00cccc;
+  --pink:    #ff4da6;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -361,6 +362,7 @@ details[open] .import-dll summary::before { content: "▼ "; }
 .badge.eventlog { background: #111;    color: var(--dim); }
 .badge.yara     { background: #331a00; color: var(--orange); }
 .badge.powershell { background: #003333; color: var(--cyan); }
+.badge.wmi      { background: #330019; color: var(--pink); }
 .badge.ping     { display: none; }
 
 /* ── Scrollbars ──────────────────────────────────────────────────── */

@@ -9,13 +9,13 @@ Checked items are implemented.
 
 - [ ] **Several subscribed ETW providers have no collector wired up** — `ETW_PROVIDERS` in
   `quarry/collectors/etw_session.py` includes `Microsoft-Windows-DotNETRuntime`,
-  `Microsoft-Windows-WMI-Activity`, `Microsoft-Windows-TaskScheduler`, and
-  `Microsoft-Antimalware-Engine`, but `AnalysisSession.__init__()` (`quarry/session.py`) only
-  calls `register_router()` for the process/file/registry/network/DNS/PowerShell providers.
-  Events from the remaining four reach `ETWSession._dispatch()` and are silently dropped
-  since no handler is registered. WMI-Activity (common for lateral movement/persistence) is
-  lost entirely — nothing consumes it yet.
-  (`Microsoft-Windows-PowerShell` is now handled by `PowerShellCollector`.)
+  `Microsoft-Windows-TaskScheduler`, and `Microsoft-Antimalware-Engine`, but
+  `AnalysisSession.__init__()` (`quarry/session.py`) only calls `register_router()` for the
+  process/file/registry/network/DNS/PowerShell/WMI-Activity providers. Events from the
+  remaining three reach `ETWSession._dispatch()` and are silently dropped since no handler
+  is registered.
+  (`Microsoft-Windows-PowerShell` is now handled by `PowerShellCollector`;
+  `Microsoft-Windows-WMI-Activity` is now handled by `WMIActivityCollector`.)
 
 ---
 
