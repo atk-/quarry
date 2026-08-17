@@ -99,6 +99,10 @@ function summarize(ev) {
     const rules = (d.matches || []).map(m => m.rule).join(", ");
     return `${rules} → ${d.path || ""}`;
   }
+  if (ev.event_type === "powershell") {
+    const trunc = d.truncated ? " (truncated)" : "";
+    return `${d.path || "<inline>"}: ${(d.script_text || "").slice(0, 80)}${trunc}`;
+  }
   return JSON.stringify(d).slice(0, 80);
 }
 

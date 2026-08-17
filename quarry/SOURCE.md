@@ -49,6 +49,10 @@ See [../ARCHITECTURE.md](../ARCHITECTURE.md) for how these pieces fit together.
 - **`eventlog_collector.py`** — Subscribes to the Security/System/Application
   Windows Event Log channels via `win32evtlog.EvtSubscribe` on a background
   thread per channel and emits raw XML as `Event` objects; no-op off-Windows.
+- **`powershell_collector.py`** — Maps `Microsoft-Windows-PowerShell` Event ID 4104
+  (Script Block Logging) records to `Event` objects. Buffers multi-fragment script
+  blocks by `ScriptBlockId` and emits once reassembled — the one stateful collector
+  in this package.
 
 ## `quarry/hooks/`
 

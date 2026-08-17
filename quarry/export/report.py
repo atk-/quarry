@@ -38,6 +38,7 @@ _TEMPLATE = """\
   .hook{{background:#440000;color:#ff4444}}
   .eventlog{{background:#1a1a00;color:#888}}
   .yara{{background:#332200;color:#ff8800}}
+  .powershell{{background:#003333;color:#00cccc}}
   details summary{{cursor:pointer;color:#888}}
   details[open] summary{{color:#0f0}}
 </style>

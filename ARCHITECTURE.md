@@ -68,8 +68,9 @@ Each domain collector is a thin mapper:
 | `RegistryCollector` | `Microsoft-Windows-Kernel-Registry` | set_value, create_key, delete_key, rename_key |
 | `NetworkCollector` | `Microsoft-Windows-Kernel-Network` + `Microsoft-Windows-DNS-Client` | TCP/UDP connect/send/recv, DNS queries |
 | `EventLogCollector` | Win32 `EvtSubscribe` | Security / System / Application channels |
+| `PowerShellCollector` | `Microsoft-Windows-PowerShell` | Reassembled PowerShell Script Block Logging (EID 4104) text |
 
-Collectors implement the `Collector` ABC (`base.py`): `start()`, `stop()`, and a `handle(record)` method that the ETW session calls. They are stateless — they map raw ETW record dicts to `Event` objects and emit them; no buffering or state lives inside a collector.
+Collectors implement the `Collector` ABC (`base.py`): `start()`, `stop()`, and a `handle(record)` method that the ETW session calls. With one deliberate exception, they are stateless — they map raw ETW record dicts to `Event` objects and emit them; no buffering or state lives inside a collector. The exception is `PowerShellCollector`: EID 4104 (Script Block Logging) splits large/obfuscated script text across multiple ETW events sharing a `ScriptBlockId`, so the collector buffers fragments per block until all arrive, then emits one reassembled `Event`. This buffer is bounded (oldest-entry eviction past a fixed count of concurrently-tracked incomplete blocks) so a script block that never completes can't grow memory without limit.
 
 ### Hook DLL (`quarry/hooks/hook_dll/`)
 

@@ -11,6 +11,7 @@ EVENT_NETWORK  = "network"
 EVENT_HOOK     = "hook"
 EVENT_EVENTLOG = "eventlog"
 EVENT_YARA     = "yara"
+EVENT_POWERSHELL = "powershell"
 
 
 @dataclass

@@ -8,15 +8,14 @@ Checked items are implemented.
 ## Known Issues / Bugs
 
 - [ ] **Several subscribed ETW providers have no collector wired up** — `ETW_PROVIDERS` in
-  `quarry/collectors/etw_session.py` includes `Microsoft-Windows-PowerShell`,
-  `Microsoft-Windows-DotNETRuntime`, `Microsoft-Windows-WMI-Activity`,
-  `Microsoft-Windows-TaskScheduler`, and `Microsoft-Antimalware-Engine`, but
-  `AnalysisSession.__init__()` (`quarry/session.py`) only calls `register_router()` for the
-  process/file/registry/network/DNS providers. Events from the other five reach
-  `ETWSession._dispatch()` and are silently dropped since no handler is registered.
-  PowerShell Script Block Logging (EID 4104) and WMI-Activity (common for lateral
-  movement/persistence) are lost entirely, not just unparsed as the "Script engine deep
-  parsing" item below implies — nothing consumes them yet.
+  `quarry/collectors/etw_session.py` includes `Microsoft-Windows-DotNETRuntime`,
+  `Microsoft-Windows-WMI-Activity`, `Microsoft-Windows-TaskScheduler`, and
+  `Microsoft-Antimalware-Engine`, but `AnalysisSession.__init__()` (`quarry/session.py`) only
+  calls `register_router()` for the process/file/registry/network/DNS/PowerShell providers.
+  Events from the remaining four reach `ETWSession._dispatch()` and are silently dropped
+  since no handler is registered. WMI-Activity (common for lateral movement/persistence) is
+  lost entirely — nothing consumes it yet.
+  (`Microsoft-Windows-PowerShell` is now handled by `PowerShellCollector`.)
 
 ---
 
@@ -44,10 +43,14 @@ Checked items are implemented.
   artifacts. Detecting these tells you the sample is aware of analysis even when it appears
   idle.
 
-- [ ] **Script engine deep parsing** — The `Microsoft-Windows-PowerShell` provider is
-  subscribed but not parsed. Event ID 4104 (Script Block Logging) carries the deobfuscated
-  PowerShell text the engine actually executes. Similarly, `Microsoft-Windows-Script-Interface`
-  covers VBScript/JScript. These need dedicated collector handlers rather than pass-through.
+- [x] **Script engine deep parsing — PowerShell** — `PowerShellCollector`
+  (`quarry/collectors/powershell_collector.py`) parses `Microsoft-Windows-PowerShell` Event
+  ID 4104 (Script Block Logging), reassembling multi-fragment script blocks by
+  `ScriptBlockId` and emitting the deobfuscated script text as an `EVENT_POWERSHELL` event.
+
+- [ ] **Script engine deep parsing — VBScript/JScript** — `Microsoft-Windows-Script-Interface`
+  covers VBScript/JScript and needs a dedicated collector handler, following the
+  `PowerShellCollector` pattern.
 
 - [ ] **Network payload capture (PCAP)** — ETW gives connection metadata and byte counts
   but not content. Integrate Npcap to write a PCAP file alongside the session DB. Correlate

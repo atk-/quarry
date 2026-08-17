@@ -28,6 +28,7 @@ from quarry.collectors.file_collector     import FileCollector,    PROVIDER as F
 from quarry.collectors.registry_collector import RegistryCollector, PROVIDER as REG_PROVIDER
 from quarry.collectors.network_collector  import NetworkCollector, PROVIDER_NET, PROVIDER_DNS
 from quarry.collectors.eventlog_collector import EventLogCollector
+from quarry.collectors.powershell_collector import PowerShellCollector, PROVIDER as PS_PROVIDER
 from quarry.hooks.ipc_server      import HookIPCServer
 from quarry.hooks.child_injector  import ChildInjector
 from quarry.analysis.yara_scanner import YaraScanner
@@ -66,12 +67,14 @@ class AnalysisSession:
         self._reg_col  = RegistryCollector(emit=self._store.post)
         self._net_col  = NetworkCollector(emit=self._store.post)
         self._evtlog   = EventLogCollector(emit=self._store.post)
+        self._ps_col   = PowerShellCollector(emit=self._store.post)
 
         self._etw.register_router(PROC_PROVIDER, self._proc_col.handle)
         self._etw.register_router(FILE_PROVIDER, self._file_col.handle)
         self._etw.register_router(REG_PROVIDER,  self._reg_col.handle)
         self._etw.register_router(PROVIDER_NET,  self._net_col.handle_net)
         self._etw.register_router(PROVIDER_DNS,  self._net_col.handle_dns)
+        self._etw.register_router(PS_PROVIDER,   self._ps_col.handle)
 
         self._stop_event = asyncio.Event()
 
@@ -198,6 +201,7 @@ class AnalysisSession:
         self._evtlog.stop()
         self._child_injector.stop()
         self._yara.stop()
+        self._ps_col.stop()
 
         print("[Quarry] Capturing post-snapshot…")
         await self._store.store_snapshot("post", capture())
