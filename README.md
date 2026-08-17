@@ -26,6 +26,8 @@ Planned/unimplemented features are tracked in [TODO.md](TODO.md).
   network connections) with a diff to spot persistence and new connections
 - Static PE analysis (imports, section entropy, packer/anomaly detection, risk score)
 - Event correlation and IOC extraction (IPs, domains, file paths, registry keys, hashes)
+- Optional YARA scanning of files the sample writes and RW→RX memory dumps, with matches
+  surfaced as timeline events
 - Live web UI (process tree, timeline, static analysis) over WebSocket
 - HTML and JSON report export, usable without the rest of the system running
 
@@ -78,10 +80,15 @@ Options:
 ```
 quarry start [--output/-o session.db] [--sample/-s binary.exe]
              [--dll-dir/-d .] [--port/-p 8765] [--host 127.0.0.1]
+             [--yara-rules/-y rules.yar]
 ```
 
 `--dll-dir` should point to the directory containing the built
 `quarry_hooks_x64.dll` / `quarry_hooks_x86.dll` (used for auto-injecting children).
+
+`--yara-rules` points to a single YARA rule file or a directory of `*.yar`/`*.yara`
+files. When set, Quarry scans every file the sample writes to disk and every RW→RX
+memory dump against the ruleset, surfacing matches as `yara` events in the timeline.
 
 ### Inject into an already-running process
 

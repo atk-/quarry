@@ -36,7 +36,13 @@ class FileCollector(Collector):
     def handle(self, record: dict) -> None:
         eid  = record.get("EventId", 0)
         path = record.get("FileName", "") or record.get("OpenPath", "")
-        pid  = record.get("IssuingThreadId", 0)  # thread; process resolved upstream
+        # ProcessId comes from the ETW event header (present on every record,
+        # same field used by ProcessCollector/RegistryCollector). IssuingThreadId
+        # is a Kernel-File-specific payload field for the I/O-issuing thread —
+        # not the same thing as the owning process, so it's kept as auxiliary
+        # "tid" data rather than used for pid attribution.
+        pid = record.get("ProcessId", 0)
+        tid = record.get("IssuingThreadId", 0)
 
         op_map = {
             _EID_CREATE:   "create",
@@ -51,7 +57,7 @@ class FileCollector(Collector):
         if op is None:
             return
 
-        data: dict = {"op": op, "path": path}
+        data: dict = {"op": op, "path": path, "tid": tid}
         if op == "write":
             data["bytes"] = record.get("IoSize", 0)
         if op == "rename":

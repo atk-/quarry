@@ -38,7 +38,11 @@ def cli() -> None:
               help="Port for the web UI.")
 @click.option("--host", default="127.0.0.1", show_default=True,
               help="Bind address for the web UI.")
-def start(output: str, sample: str | None, dll_dir: str, port: int, host: str) -> None:
+@click.option("--yara-rules", "-y", default=None,
+              help="YARA rule file or directory to scan against files the sample "
+                   "writes and RW→RX memory dumps.")
+def start(output: str, sample: str | None, dll_dir: str, port: int, host: str,
+          yara_rules: str | None) -> None:
     """Start a monitoring session and open the web workbench."""
     from quarry.session import AnalysisSession
 
@@ -48,6 +52,7 @@ def start(output: str, sample: str | None, dll_dir: str, port: int, host: str) -
         dll_dir=Path(dll_dir),
         host=host,
         port=port,
+        yara_rules=yara_rules,
     )
 
     try:

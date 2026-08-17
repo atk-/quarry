@@ -96,6 +96,15 @@ Out of scope for this file — see ARCHITECTURE.md.
   file paths (filtering System32/SysWOW64/WinSxS noise), persistence-relevant
   registry keys (Run, RunOnce, Winlogon, Services, AppInit_DLLs), and
   on-demand SHA-256 file hashes.
+- **`yara_scanner.py`** — `YaraScanner` is an event-driven live component (not
+  a post-hoc pure function like the other two) — it subscribes to
+  `SessionStore` and reacts to `EVENT_FILE` writes (debounced per-path, 500ms
+  quiet window, cancel-and-replace on new writes to the same path) and
+  `EVENT_HOOK` `MEM_DUMP` events (scanned immediately). Compiles rules once at
+  `run()` start via `yara.compile()`, from a single file or a directory of
+  `*.yar`/`*.yara` files (namespaced by filename stem). Emits `EVENT_YARA`
+  events only when `rules.match()` finds at least one match; skips silently on
+  missing files, oversized files (>100MB), and `yara.Error`.
 
 ## `quarry/static/`
 

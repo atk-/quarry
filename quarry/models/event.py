@@ -10,6 +10,7 @@ EVENT_REGISTRY = "registry"
 EVENT_NETWORK  = "network"
 EVENT_HOOK     = "hook"
 EVENT_EVENTLOG = "eventlog"
+EVENT_YARA     = "yara"
 
 
 @dataclass

@@ -95,6 +95,10 @@ function summarize(ev) {
     return `${d.op || ""} ${d.src_addr || ""}→${d.dst_addr || ""}:${d.dst_port || ""}`;
   }
   if (ev.event_type === "hook")     return `${d.hook || ""}: ${d.payload || ""}`;
+  if (ev.event_type === "yara") {
+    const rules = (d.matches || []).map(m => m.rule).join(", ");
+    return `${rules} → ${d.path || ""}`;
+  }
   return JSON.stringify(d).slice(0, 80);
 }
 

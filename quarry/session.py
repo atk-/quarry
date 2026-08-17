@@ -13,6 +13,7 @@ Wires together:
 """
 from __future__ import annotations
 import asyncio
+import contextlib
 import signal
 import subprocess
 import time
@@ -29,6 +30,7 @@ from quarry.collectors.network_collector  import NetworkCollector, PROVIDER_NET,
 from quarry.collectors.eventlog_collector import EventLogCollector
 from quarry.hooks.ipc_server      import HookIPCServer
 from quarry.hooks.child_injector  import ChildInjector
+from quarry.analysis.yara_scanner import YaraScanner
 from quarry.models.session_store  import SessionStore
 from quarry.snapshot.snapshot     import capture
 from quarry.ui import server
@@ -42,12 +44,14 @@ class AnalysisSession:
         dll_dir: Path = Path("."),
         host: str = "127.0.0.1",
         port: int = 8765,
+        yara_rules: Optional[str] = None,
     ) -> None:
         self.db_path     = db_path
         self.sample_path = sample_path
         self.dll_dir     = dll_dir
         self.host        = host
         self.port        = port
+        self.yara_rules  = yara_rules
 
         self._store      = SessionStore(db_path)
         self._etw        = ETWSession(emit=self._store.post)
@@ -55,6 +59,7 @@ class AnalysisSession:
         self._child_injector = ChildInjector(
             root_pids=set(), dll_dir=dll_dir, store=self._store,
         )
+        self._yara = YaraScanner(rules_path=yara_rules, store=self._store)
 
         self._proc_col = ProcessCollector(emit=self._store.post)
         self._file_col = FileCollector(emit=self._store.post)
@@ -132,6 +137,7 @@ class AnalysisSession:
 
         store_task    = asyncio.create_task(self._store.run(),          name="store-drain")
         injector_task = asyncio.create_task(self._child_injector.run(), name="child-injector")
+        yara_task     = asyncio.create_task(self._yara.run(),           name="yara-scanner")
 
         # ── Phase 5: launch sample after ETW settles (1.5 s) ──────────
         if self.sample_path:
@@ -148,6 +154,10 @@ class AnalysisSession:
         finally:
             store_task.cancel()
             injector_task.cancel()
+            yara_task.cancel()
+            for t in (store_task, injector_task, yara_task):
+                with contextlib.suppress(asyncio.CancelledError):
+                    await t
             await self._shutdown()
 
     async def _run_static_analysis(self, path: str) -> None:
@@ -187,6 +197,7 @@ class AnalysisSession:
         self._hook_ipc.stop()
         self._evtlog.stop()
         self._child_injector.stop()
+        self._yara.stop()
 
         print("[Quarry] Capturing post-snapshot…")
         await self._store.store_snapshot("post", capture())

@@ -138,6 +138,8 @@ offset  size  field
 - **Registry keys** — from registry events; keeps only persistence-adjacent keys (Run, RunOnce, Winlogon, Services, AppInit_DLLs, IFEO)
 - **File hashes** — SHA-256, computed on demand if `hash_files=True` and the file is accessible
 
+**`yara_scanner.py`** — `YaraScanner` is a live component, not a post-hoc scan: it subscribes to the store's event stream (same pattern as `ChildInjector`) and reacts to two triggers. Files the target writes to disk are scanned with a 500ms per-path debounce (write bursts collapse into one scan; not gated on a file-close event since some malware never closes handles promptly). RW→RX memory dumps (`MEM_DUMP` hook events) are scanned immediately since the dump is already closed on disk by the time the event exists. Both run `yara.Rules.match()` off the event loop via `run_in_executor`. Matches are posted back as `EVENT_YARA` events carrying the matching rule name(s), tags, and metadata; a scanner with no rules loaded (bad path, compile error, or `yara-python` missing) self-disables at startup and never subscribes.
+
 ### Export (`quarry/export/`)
 
 **`json_export.py`** — Serialises the full session (events, process tree, IOCs, snapshot diff) to JSON.

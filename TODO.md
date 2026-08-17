@@ -18,15 +18,6 @@ Checked items are implemented.
   movement/persistence) are lost entirely, not just unparsed as the "Script engine deep
   parsing" item below implies — nothing consumes them yet.
 
-- [ ] **File events likely mis-attributed to a thread ID instead of a process ID** —
-  `FileCollector.handle()` (`quarry/collectors/file_collector.py`) sets
-  `pid=record.get("IssuingThreadId", 0)` with a comment claiming "thread; process resolved
-  upstream," but no such resolution exists anywhere in the pipeline. File events probably
-  end up tagged with a TID in the `pid` field, breaking per-PID correlation (process tree
-  view, PID filter in the UI, correlator grouping) for the `file` event type specifically.
-  Needs a TID→PID resolution step (e.g. via `OpenThread`/`GetProcessIdOfThread`, or reading
-  `ProcessId` directly from the ETW record if the provider exposes it).
-
 ---
 
 ## Data Collection
@@ -67,7 +58,7 @@ Checked items are implemented.
 
 ## Analysis & Detection
 
-- [ ] **YARA integration** — Load a user-supplied ruleset at session start. Scan:
+- [x] **YARA integration** — Load a user-supplied ruleset at session start. Scan:
   (1) any file the target writes to disk, (2) memory dump files produced by the RW→RX hook.
   Surface YARA matches as first-class events in the timeline with the matching rule name and
   tags.

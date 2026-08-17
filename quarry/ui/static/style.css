@@ -358,6 +358,7 @@ details[open] .import-dll summary::before { content: "▼ "; }
 .badge.network  { background: #1a1a00; color: var(--yellow); }
 .badge.hook     { background: #1a0000; color: var(--red); }
 .badge.eventlog { background: #111;    color: var(--dim); }
+.badge.yara     { background: #331a00; color: var(--orange); }
 .badge.ping     { display: none; }
 
 /* ── Scrollbars ──────────────────────────────────────────────────── */
