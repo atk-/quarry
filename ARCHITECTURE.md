@@ -57,7 +57,7 @@ There is one ingestion path: every event — regardless of source — becomes an
 
 ### Collectors (`quarry/collectors/`)
 
-**`etw_session.py`** — Manages a single real-time ETW session covering all configured providers. On Windows with `pywintrace` installed, it calls `ETW(providers=..., event_callback=self._dispatch)` and routes each callback by `ProviderName` to the registered handler. On non-Windows (or without pywintrace) it emits a synthetic stream of process events so the full pipeline can be tested during development.
+**`etw_session.py`** — Manages a single real-time ETW session covering all configured providers. On Windows with `pywintrace` installed, it calls `ETW(providers=..., event_callback=self._dispatch)`. pywintrace invokes that callback with a raw `(event_id, data)` tuple, not a ready-made flat dict, and only exposes the emitting provider as a GUID nested under `data["EventHeader"]["ProviderId"]` — `_dispatch` reverse-looks-up that GUID against `_PROVIDER_GUIDS` (normalized via `_normalize_guid` to tolerate brace/dash/case differences) to find the provider name, promotes `EventId`/`ProcessId` out of the nested header to top-level keys, and routes the now-flat dict to the registered handler. Manifest-defined event-specific properties (`FileName`, `KeyName`, `ScriptBlockText`, ...) are already top-level courtesy of pywintrace's own property parsing — `_dispatch` is the single place that bridges pywintrace's raw shape to the flat dict every collector's `handle()` expects. On non-Windows (or without pywintrace) it emits a synthetic stream of process events so the full pipeline can be tested during development.
 
 Each domain collector is a thin mapper:
 

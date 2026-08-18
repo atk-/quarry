@@ -12,6 +12,7 @@ mock generator is used regardless of platform.
 """
 from __future__ import annotations
 import random
+import re
 import sys
 import threading
 import time
@@ -47,6 +48,19 @@ _PROVIDER_GUIDS = {
     "Microsoft-Windows-WMI-Activity":    "{1418EF04-B0B4-4623-BF7E-D74AB47BBDAA}",
     "Microsoft-Windows-TaskScheduler":   "{DE7B24EA-73C8-4A09-985D-5BDADCFA9017}",
     "Microsoft-Antimalware-Engine":      "{0A002690-3839-4E3A-B3B6-96D8DF868D99}",
+}
+
+def _normalize_guid(guid: str) -> str:
+    """Strip braces/dashes and uppercase, so GUID strings from different
+    sources (our own literals vs. whatever ctypes' str(GUID) produces) can
+    be compared reliably regardless of formatting."""
+    return re.sub(r"[^0-9A-Fa-f]", "", str(guid)).upper()
+
+
+# Reverse lookup: normalized GUID -> provider name, for routing real ETW
+# records back to the right collector (see _dispatch).
+_GUID_TO_PROVIDER = {
+    _normalize_guid(guid): name for name, guid in _PROVIDER_GUIDS.items()
 }
 
 _WINDOWS = sys.platform == "win32"
@@ -123,11 +137,30 @@ class ETWSession:
         )
         self._thread.start()
 
-    def _dispatch(self, record: dict) -> None:
-        provider = record.get("ProviderName", "")
+    def _dispatch(self, record) -> None:
+        """
+        pywintrace invokes the event callback with a single (event_id, data)
+        tuple, not a ready-made flat dict — see fireeye/pywintrace's
+        ETW._processEvent(). `data["EventHeader"]` carries the generic
+        header fields (ProviderId as a GUID string, ProcessId, etc.);
+        manifest-defined event-specific properties (FileName, KeyName,
+        ScriptBlockText, ...) are already merged in at the top level by
+        pywintrace itself.
+
+        Every collector's handle() expects a flat dict with "EventId" and
+        "ProcessId" at the top level (matching every other field), so this
+        promotes them out of EventHeader before routing — the one place in
+        the codebase that needs to know about pywintrace's raw shape.
+        """
+        event_id, data = record
+        header = data.get("EventHeader", {})
+        data["EventId"] = event_id
+        data["ProcessId"] = header.get("ProcessId", 0)
+
+        provider = _GUID_TO_PROVIDER.get(_normalize_guid(header.get("ProviderId", "")), "")
         handler = self._routers.get(provider)
         if handler is not None:
-            handler(record)
+            handler(data)
 
     # ------------------------------------------------------------------
     # Mock path for offline dev
