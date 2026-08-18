@@ -5,6 +5,7 @@ from typing import Any, TextIO
 from quarry.models.event import Event
 from quarry.models.process_tree import ProcessTree
 from quarry.analysis.ioc_extractor import IOCs
+from quarry.analysis.mitre_mapper import TechniqueMatch
 from quarry.snapshot.diff import diff_snapshots
 
 
@@ -17,6 +18,7 @@ def export_session(
     out: TextIO,
     indent: int = 2,
     static_analysis: dict | None = None,
+    techniques: list[TechniqueMatch] | None = None,
 ) -> None:
     payload: dict[str, Any] = {
         "event_count":    len(events),
@@ -26,6 +28,8 @@ def export_session(
     }
     if static_analysis:
         payload["static_analysis"] = static_analysis
+    if techniques:
+        payload["mitre_techniques"] = [t.to_dict() for t in techniques]
     if pre_snapshot and post_snapshot:
         payload["snapshot_diff"] = diff_snapshots(pre_snapshot, post_snapshot)
 

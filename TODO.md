@@ -80,7 +80,7 @@ Checked items are implemented.
 
 ## Reporting & Export
 
-- [ ] **MITRE ATT&CK technique tagging** — Map observed behaviors to ATT&CK technique IDs
+- [x] **MITRE ATT&CK technique tagging** — Map observed behaviors to ATT&CK technique IDs
   (e.g. `VirtualAllocEx` + `WriteProcessMemory` + `CreateRemoteThread` → T1055 Process
   Injection). Include technique IDs in the HTML report and JSON export.
 

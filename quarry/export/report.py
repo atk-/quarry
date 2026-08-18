@@ -16,6 +16,7 @@ from typing import TextIO
 from quarry.models.event import Event
 from quarry.models.process_tree import ProcessTree
 from quarry.analysis.ioc_extractor import IOCs
+from quarry.analysis.mitre_mapper import TechniqueMatch
 from quarry.snapshot.diff import diff_snapshots
 
 _TEMPLATE = """\
@@ -45,7 +46,7 @@ _TEMPLATE = """\
 </style>
 </head>
 <body>
-<h1>Dynamic Analysis Toolkit — Behavior Report</h1>
+<h1>Quarry — Behavior Report</h1>
 <p>Generated: {generated} &nbsp;|&nbsp; Total events: {event_count}</p>
 
 <h2>Static Analysis</h2>
@@ -53,6 +54,9 @@ _TEMPLATE = """\
 
 <h2>IOCs</h2>
 {ioc_section}
+
+<h2>MITRE ATT&CK</h2>
+{mitre_section}
 
 <h2>Snapshot Diff</h2>
 {diff_section}
@@ -82,6 +86,7 @@ def generate(
     post_snapshot: dict | None,
     out: TextIO,
     static_analysis: dict | None = None,
+    techniques: list[TechniqueMatch] | None = None,
 ) -> None:
     diff = diff_snapshots(pre_snapshot, post_snapshot) if (pre_snapshot and post_snapshot) else {}
 
@@ -90,6 +95,7 @@ def generate(
         event_count=len(events),
         static_section=_static_section(static_analysis),
         ioc_section=_ioc_table(iocs),
+        mitre_section=_mitre_table(techniques),
         diff_section=_diff_table(diff),
         tree_json=json.dumps(tree.to_dict(), indent=2),
         event_rows="\n".join(_event_row(e) for e in events),
@@ -156,6 +162,23 @@ def _ioc_table(iocs: IOCs) -> str:
     if not rows:
         return "<p>No IOCs extracted.</p>"
     return f"<table><tr><th>Type</th><th>Value</th><th>Hash</th></tr>{''.join(rows)}</table>"
+
+
+def _mitre_table(techniques: list[TechniqueMatch] | None) -> str:
+    if not techniques:
+        return "<p>No ATT&CK techniques detected.</p>"
+    rows = []
+    for t in techniques:
+        pids = ", ".join(str(p) for p in sorted(t.pids))
+        evidence = "; ".join(_esc(e) for e in sorted(set(t.evidence)))
+        rows.append(
+            f"<tr><td>{_esc(t.technique_id)}</td><td>{_esc(t.name)}</td>"
+            f"<td>{_esc(t.tactic)}</td><td>{pids}</td><td>{evidence}</td></tr>"
+        )
+    return (
+        "<table><tr><th>ID</th><th>Name</th><th>Tactic</th>"
+        "<th>PIDs</th><th>Evidence</th></tr>" + "".join(rows) + "</table>"
+    )
 
 
 def _diff_table(diff: dict) -> str:

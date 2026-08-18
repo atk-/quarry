@@ -227,6 +227,7 @@ def report(db_path: str, fmt: str, out_path: str) -> None:
     from quarry.models.event import Event
     from quarry.models.process_tree import ProcessTree, ProcessNode
     from quarry.analysis.ioc_extractor import extract
+    from quarry.analysis.mitre_mapper import map_techniques
 
     events = [
         Event(
@@ -249,6 +250,7 @@ def report(db_path: str, fmt: str, out_path: str) -> None:
             ))
 
     iocs = extract(events)
+    techniques = map_techniques(events)
 
     pre_row  = con.execute(
         "SELECT data FROM snapshots WHERE kind='pre'  ORDER BY id DESC LIMIT 1"
@@ -275,10 +277,12 @@ def report(db_path: str, fmt: str, out_path: str) -> None:
     try:
         if fmt == "json":
             from quarry.export.json_export import export_session
-            export_session(events, tree, iocs, pre, post, fh, static_analysis=static)
+            export_session(events, tree, iocs, pre, post, fh,
+                            static_analysis=static, techniques=techniques)
         else:
             from quarry.export.report import generate
-            generate(events, tree, iocs, pre, post, fh, static_analysis=static)
+            generate(events, tree, iocs, pre, post, fh,
+                      static_analysis=static, techniques=techniques)
     finally:
         if fh is not sys.stdout:
             fh.close()

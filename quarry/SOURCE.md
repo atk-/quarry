@@ -114,6 +114,15 @@ Out of scope for this file — see ARCHITECTURE.md.
   `*.yar`/`*.yara` files (namespaced by filename stem). Emits `EVENT_YARA`
   events only when `rules.match()` finds at least one match; skips silently on
   missing files, oversized files (>100MB), and `yara.Error`.
+- **`mitre_mapper.py`** — `map_techniques(events)` is a pure post-hoc function
+  like `ioc_extractor.py`. Reuses `correlator.correlate()` for combo signals
+  (`injection-pattern` → T1055, `crypto-activity` → T1027), then does a direct
+  single pass for persistence-key registry writes, WMI `consumer_binding`,
+  `CREATE_SERVICE`/`MEM_DUMP` hooks, PowerShell execution, and YARA rule
+  `meta` technique hints. Returns a small deduplicated list of
+  `TechniqueMatch` (id/name/tactic/evidence/pids), merging multiple signals
+  for the same technique into one entry. Only ~8 technique IDs are known —
+  not an attempt at the full ATT&CK framework.
 
 ## `quarry/static/`
 

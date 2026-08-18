@@ -142,6 +142,8 @@ offset  size  field
 
 **`yara_scanner.py`** — `YaraScanner` is a live component, not a post-hoc scan: it subscribes to the store's event stream (same pattern as `ChildInjector`) and reacts to two triggers. Files the target writes to disk are scanned with a 500ms per-path debounce (write bursts collapse into one scan; not gated on a file-close event since some malware never closes handles promptly). RW→RX memory dumps (`MEM_DUMP` hook events) are scanned immediately since the dump is already closed on disk by the time the event exists. Both run `yara.Rules.match()` off the event loop via `run_in_executor`. Matches are posted back as `EVENT_YARA` events carrying the matching rule name(s), tags, and metadata; a scanner with no rules loaded (bad path, compile error, or `yara-python` missing) self-disables at startup and never subscribes.
 
+**`mitre_mapper.py`** — `map_techniques(events)` is a post-hoc pure function (like `ioc_extractor.py`, not a live subscriber): it reuses `correlator.correlate()` internally to translate the `injection-pattern`/`crypto-activity` correlation tags into T1055/T1027, then does a direct single-pass scan for other signals (registry writes to known persistence keys, WMI `consumer_binding`, PowerShell execution, service creation, YARA rule `meta` carrying a technique ID). Deliberately conservative — no generic network-connection or snapshot-diff-based tagging, since weak/noisy signals are worse than gaps in a security tool. Invoked only from `quarry report`; not part of the live event stream or UI.
+
 ### Export (`quarry/export/`)
 
 **`json_export.py`** — Serialises the full session (events, process tree, IOCs, snapshot diff) to JSON.
