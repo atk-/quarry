@@ -19,6 +19,7 @@ if _WINDOWS:
     try:
         import win32evtlog   # type: ignore[import]
         import win32con      # type: ignore[import]
+        import win32event    # type: ignore[import]
         _HAS_WIN32 = True
     except ImportError:
         pass
@@ -50,9 +51,14 @@ class EventLogCollector(Collector):
         self._threads.clear()
 
     def _subscribe(self, channel: str) -> None:
+        # EvtSubscribe needs either a SignalEvent (pull mode, polled via
+        # EvtNext below) or a Callback (push mode) to know which mode to
+        # use — passing neither is rejected with ERROR_INVALID_PARAMETER (87).
+        signal_event = win32event.CreateEvent(None, 0, 0, None)  # type: ignore[name-defined]
         handle = win32evtlog.EvtSubscribe(  # type: ignore[name-defined]
             channel,
             win32evtlog.EvtSubscribeToFutureEvents,  # type: ignore[name-defined]
+            SignalEvent=signal_event,
         )
         while self._running:
             events = win32evtlog.EvtNext(handle, 10, 1000)  # type: ignore[name-defined]
