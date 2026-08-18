@@ -34,12 +34,27 @@ ETW_PROVIDERS = [
     "Microsoft-Antimalware-Engine",
 ]
 
+# ETW providers are addressed by GUID, not name — pywintrace's ProviderInfo
+# requires one. Every name in ETW_PROVIDERS must have an entry here.
+_PROVIDER_GUIDS = {
+    "Microsoft-Windows-Kernel-Process":  "{22FB2CD6-0E7B-422B-A0C7-2FAD1FD0E716}",
+    "Microsoft-Windows-Kernel-File":     "{EDD08927-9CC4-4E65-B970-C2560FB5C289}",
+    "Microsoft-Windows-Kernel-Registry": "{70EB4F03-C1DE-4F73-A051-33D13D5413BD}",
+    "Microsoft-Windows-Kernel-Network":  "{7DD42A49-5329-4832-8DFD-43D979153A88}",
+    "Microsoft-Windows-DNS-Client":      "{1C95126E-7EEA-49A9-A3FE-A378B03DDB4D}",
+    "Microsoft-Windows-PowerShell":      "{A0C1853B-5C40-4B15-8766-3CF1C58F985A}",
+    "Microsoft-Windows-DotNETRuntime":   "{E13C0D23-CCBC-4E12-931B-D9CC2EEE27E4}",
+    "Microsoft-Windows-WMI-Activity":    "{1418EF04-B0B4-4623-BF7E-D74AB47BBDAA}",
+    "Microsoft-Windows-TaskScheduler":   "{DE7B24EA-73C8-4A09-985D-5BDADCFA9017}",
+    "Microsoft-Antimalware-Engine":      "{0A002690-3839-4E3A-B3B6-96D8DF868D99}",
+}
+
 _WINDOWS = sys.platform == "win32"
 _HAS_ETW = False
 
 if _WINDOWS:
     try:
-        from etw import ETW, ProviderInfo  # type: ignore[import]
+        from etw import ETW, ProviderInfo, GUID  # type: ignore[import]
         _HAS_ETW = True
     except ImportError:
         pass
@@ -90,10 +105,15 @@ class ETWSession:
     # ------------------------------------------------------------------
 
     def _start_real(self) -> None:
-        providers = [
-            ProviderInfo(name, level=5)  # type: ignore[name-defined]
-            for name in ETW_PROVIDERS
-        ]
+        providers = []
+        for name in ETW_PROVIDERS:
+            guid = _PROVIDER_GUIDS.get(name)
+            if guid is None:
+                print(f"[Quarry] ETW: no GUID registered for provider {name!r} — skipping.")
+                continue
+            providers.append(
+                ProviderInfo(name, GUID(guid), level=5)  # type: ignore[name-defined]
+            )
         self._session = ETW(  # type: ignore[name-defined]
             providers=providers,
             event_callback=self._dispatch,

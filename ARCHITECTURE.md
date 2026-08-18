@@ -237,7 +237,11 @@ Indexes on `events(pid)`, `events(event_type)`, `events(timestamp)` keep the rep
 ## Adding a new collector
 
 1. Create `quarry/collectors/foo_collector.py` extending `Collector` with a `handle(record: dict)` method.
-2. Register its ETW provider in `ETWSession.ETW_PROVIDERS`.
+2. Register its ETW provider in `ETWSession.ETW_PROVIDERS`, and add its GUID to
+   `ETWSession._PROVIDER_GUIDS` — pywintrace's `ProviderInfo` requires a GUID, not just a
+   name (look it up via the provider's manifest, e.g. `logman query providers` or the
+   `repnz/etw-providers-docs` GitHub repo; a provider without a GUID entry is skipped at
+   session start with a `[Quarry]` warning rather than crashing).
 3. In `session.py`, instantiate it and wire it: `self._etw.register_router(PROVIDER, col.handle)`.
 
 No other files need to change. The new collector's events flow through `SessionStore` automatically, appear in the UI timeline, and are included in JSON/HTML exports.
