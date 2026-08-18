@@ -20,9 +20,14 @@ if _WINDOWS:
         import win32evtlog   # type: ignore[import]
         import win32con      # type: ignore[import]
         import win32event    # type: ignore[import]
+        import pywintypes    # type: ignore[import]
         _HAS_WIN32 = True
     except ImportError:
         pass
+
+# Win32 system error codes EvtNext can surface — see _subscribe().
+_ERROR_NO_MORE_ITEMS = 259
+_ERROR_INVALID_OPERATION = 4317
 
 _CHANNELS = ["Security", "System", "Application"]
 
@@ -54,16 +59,42 @@ class EventLogCollector(Collector):
         # EvtSubscribe needs either a SignalEvent (pull mode, polled via
         # EvtNext below) or a Callback (push mode) to know which mode to
         # use — passing neither is rejected with ERROR_INVALID_PARAMETER (87).
-        signal_event = win32event.CreateEvent(None, 0, 0, None)  # type: ignore[name-defined]
+        # Manual-reset, initially-signaled, matching Microsoft's documented
+        # pull-subscription pattern ("Subscribing to Events" on MSDN): wait
+        # for the signal, drain with EvtNext until ERROR_NO_MORE_ITEMS, reset
+        # the event, wait again. Calling EvtNext without waiting on the
+        # signal first (the original bug here) can raise
+        # ERROR_INVALID_OPERATION (4317) instead of just returning no events.
+        signal_event = win32event.CreateEvent(None, 1, 1, None)  # type: ignore[name-defined]
         handle = win32evtlog.EvtSubscribe(  # type: ignore[name-defined]
             channel,
             win32evtlog.EvtSubscribeToFutureEvents,  # type: ignore[name-defined]
             SignalEvent=signal_event,
         )
         while self._running:
-            events = win32evtlog.EvtNext(handle, 10, 1000)  # type: ignore[name-defined]
-            for ev in events:
-                self._process(channel, ev)
+            wait_result = win32event.WaitForSingleObject(signal_event, 1000)  # type: ignore[name-defined]
+            if wait_result != 0:  # WAIT_OBJECT_0 — timed out, just re-check self._running
+                continue
+
+            while True:
+                try:
+                    events = win32evtlog.EvtNext(handle, 10, 0)  # type: ignore[name-defined]
+                except pywintypes.error as exc:  # type: ignore[name-defined]
+                    # ERROR_NO_MORE_ITEMS: fully drained, go back to waiting.
+                    # ERROR_INVALID_OPERATION: pywin32's own EvtNext wrapper
+                    # is supposed to swallow this into an empty result when
+                    # it means "nothing available," but a known wrapper bug
+                    # (mhammond/pywin32#2377) can let it leak through as an
+                    # exception instead — treat it the same way.
+                    if exc.winerror in (_ERROR_NO_MORE_ITEMS, _ERROR_INVALID_OPERATION):
+                        break
+                    raise
+                if not events:
+                    break
+                for ev in events:
+                    self._process(channel, ev)
+
+            win32event.ResetEvent(signal_event)  # type: ignore[name-defined]
 
     def _process(self, channel: str, ev) -> None:
         try:
